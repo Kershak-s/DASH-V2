@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard de Calidad PepsiCo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Plotly -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    :root {
+      --pepsico-blue: #0357a0;
+      --pepsico-light-blue: #0066cc;
+      --pepsico-dark-blue: #003b6f;
+      --pepsico-light-gray: #f8f9fa;
+      --pepsico-dark-gray: #343a40;
+      --good-color: #28a745;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+      --transition-speed: 0.3s;
+    }
+    
+    body {
+      background-color: #f0f2f5;
+      font-family: 'Montserrat', sans-serif;
+      color: #333;
+      padding-bottom: 2rem;
+    }
+    
+    .navbar {
+      background: linear-gradient(90deg, var(--pepsico-dark-blue), var(--pepsico-blue));
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar-brand {
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .navbar-brand img {
+      height: 40px;
+    }
+    
+    .navbar-brand span {
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .filter-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 25px;
+      border-top: 4px solid var(--pepsico-blue);
+      transition: all var(--transition-speed) ease;
+    }
+    
+    .filter-title {
+      color: var(--pepsico-blue);
+      font-weight: 600;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .filter-item label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--pepsico-dark-gray);
+      margin-bottom: 5px;
+    }
+    
+    .form-select, .form-control {
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      transition: all var(--transition-speed) ease;
+      font-size: 0.95rem;
+    }
+    
+    .form-select:focus, .form-control:focus {
+      border-color: var(--pepsico-blue);
+      box-shadow: 0 0 0 0.25rem rgba(3, 87, 160, 0.25);
+    }
+    
+    .btn-primary {
+      background-color: var(--pepsico-blue);
+      border-color: var(--pepsico-blue);
+      border-radius: 6px;
+      font-weight: 500;
+      transition: all var(--transition-speed) ease;
+      box-shadow: 0 2px 6px rgba(3, 87, 160, 0.2);
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--pepsico-dark-blue);
+      border-color: var(--pepsico-dark-blue);
+      transform: translateY(-2px);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    .dashboard-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 25px;
+      overflow: hidden;
+      transition: all var(--transition-speed) ease;
+      border: none;
+    }
+    
+    .dashboard-card:hover {
+      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+      background: linear-gradient(90deg, var(--pepsico-blue), var(--pepsico-light-blue));
+      color: white;
+      padding: 15px 20px;
+      font-weight: 600;
+      border-bottom: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .card-header i {
+      font-size: 1.1rem;
+    }
+    
+    .card-body {
+      padding: 20px;
+    }
+    
+    .kpi-container {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    
+    .kpi-metric {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      text-align: center;
+      transition: all var(--transition-speed) ease;
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+      border-left: 4px solid var(--pepsico-blue);
+    }
+    
+    .kpi-metric:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .kpi-metric .label {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      font-weight: 500;
+      color: var(--pepsico-dark-gray);
+    }
+    
+    .kpi-metric .value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--pepsico-blue);
+      margin-bottom: 5px;
+      line-height: 1.1;
+    }
+    
+    .kpi-metric .trend {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+    
+    .kpi-metric .trend.up {
+      color: var(--good-color);
+    }
+    
+    .kpi-metric .trend.down {
+      color: var(--danger-color);
+    }
+    
+    .gauge-container {
+        height: 230px;
+        width: 100%;
+        position: relative;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Ajuste específico para los gauges */
+    #manual-efficiency-chart, 
+    #automatic-efficiency-chart,
+    #ccw-efficiency-chart,
+    #atlas-efficiency-chart,
+    #tsc-efficiency-chart {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 auto;
+    }
+
+    /* Ajustes responsive */
+    @media (max-width: 768px) {
+      .gauge-container {
+          height: 200px;
+      }
+    }
+
+    /* Título del equipo */
+    .equipment-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #333;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .table-header {
+      background-color: var(--pepsico-blue);
+      color: white;
+    }
+    
+    .table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .table th {
+      font-weight: 600;
+      padding: 12px;
+      background-color: rgba(3, 87, 160, 0.1);
+      color: var(--pepsico-dark-blue);
+      border-color: #dee2e6;
+    }
+    
+    .table td {
+      padding: 12px;
+      vertical-align: middle;
+    }
+    
+    .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 0.35em 0.65em;
+      font-size: 0.75em;
+      font-weight: 600;
+      line-height: 1;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: baseline;
+      border-radius: 50rem;
+    }
+    
+    .status-badge-success {
+      background-color: var(--good-color);
+    }
+    
+    .status-badge-warning {
+      background-color: var(--warning-color);
+    }
+    
+    .status-badge-danger {
+      background-color: var(--danger-color);
+    }
+    
+    .dashboard-section {
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: var(--pepsico-dark-blue);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .section-title i {
+      color: var(--pepsico-blue);
+    }
+    
+    .loading-spinner {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.7);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .loading-spinner-content {
+      text-align: center;
+    }
+    
+    .loading-spinner-content .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: var(--pepsico-blue);
+    }
+    
+    .info-tooltip {
+      color: var(--pepsico-blue);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    
+    .date-range {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .date-range .date-inputs {
+      display: flex;
+      gap: 10px;
+    }
+    
+    /* Animation effects */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+      .kpi-container {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      
+      .filter-container .row {
+        row-gap: 15px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .kpi-container {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .kpi-metric .value {
+        font-size: 2rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .kpi-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .filter-container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loading-spinner">
+    <div class="loading-spinner-content">
+      <div class="spinner-border" role="status"></div>
+      <p class="mt-2">Cargando datos...</p>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <i class="fas fa-chart-line"></i>
+        <span>Dashboard de Calidad PepsiCo</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#"><i class="fas fa-history me-1"></i> Historial</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#"><i class="fas fa-cog me-1"></i> Configuración</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Barra de Filtros -->
+    <div class="filter-container">
+      <h5 class="filter-title"><i class="fas fa-filter"></i> Filtros del Dashboard</h5>
+      <form id="dashboard-filters" class="row">
+        <div class="col-lg-3 col-md-6 filter-item mb-2">
+          <label for="plant-select">Planta</label>
+          <select class="form-select" id="plant-select" name="plant">
+            <option value="">Todas las Plantas</option>
+          </select>
+        </div>
+        <div class="col-lg-3 col-md-6 filter-item mb-2">
+          <label for="line-select">Línea</label>
+          <select class="form-select" id="line-select" name="line">
+            <option value="">Todas las Líneas</option>
+          </select>
+        </div>
+        <div class="col-lg-3 col-md-6 filter-item mb-2">
+          <label for="equipment-select">Equipo</label>
+          <select class="form-select" id="equipment-select" name="equipment">
+            <option value="">Todos los Equipos</option>
+          </select>
+        </div>
+        <div class="col-lg-3 col-md-6 filter-item mb-2">
+          <label>Período de Tiempo</label>
+          <div class="date-range">
+            <div class="date-inputs">
+              <input type="date" class="form-control" name="start_date" id="start-date" placeholder="Inicio">
+              <input type="date" class="form-control" name="end_date" id="end-date" placeholder="Fin">
+            </div>
+            <small id="available-dates-info" class="text-muted mt-1"></small>
+          </div>
+        </div>
+        <div class="col-12 text-end mt-3">
+          <button type="submit" class="btn btn-primary px-4">
+            <i class="fas fa-search me-2"></i> Aplicar Filtros
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Resumen de Métricas Principales -->
+    <div class="dashboard-section">
+      <h4 class="section-title"><i class="fas fa-chart-pie"></i> Métricas Principales</h4>
+      <div class="kpi-container">
+        <div class="kpi-metric animate-fadeIn" style="--delay: 0.1s">
+          <div class="label">Eficiencia General</div>
+          <div class="value" id="overall-efficiency-value">0%</div>
+          <div class="trend up"><i class="fas fa-arrow-up me-1"></i> 2.5% vs. período anterior</div>
+        </div>
+        <div class="kpi-metric animate-fadeIn" style="--delay: 0.2s">
+          <div class="label">Tasa de Desperdicio</div>
+          <div class="value" id="waste-rate-value">0%</div>
+          <div class="trend down"><i class="fas fa-arrow-down me-1"></i> 1.3% vs. período anterior</div>
+        </div>
+        <div class="kpi-metric animate-fadeIn" style="--delay: 0.3s">
+          <div class="label">Bolsas Buenas</div>
+          <div class="value" id="good-bags-value">0</div>
+          <div class="trend up"><i class="fas fa-arrow-up me-1"></i> 5.8% vs. período anterior</div>
+        </div>
+        <div class="kpi-metric animate-fadeIn" style="--delay: 0.4s">
+          <div class="label">Bolsas Teóricas</div>
+          <div class="value" id="theoretical-bags-value">0</div>
+          <div class="trend"><i class="fas fa-minus me-1"></i> 0.2% vs. período anterior</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen de Equipos -->
+    <div class="dashboard-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-info-circle"></i> Resumen de Equipos
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Planta</th>
+                <th class="text-center">Equipos instalados</th>
+                <th class="text-center">Equipos cargados</th>
+                <th class="text-center">%</th>
+                <th class="text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="equipment-summary-table">
+              <!-- Datos se cargarán dinámicamente -->
+            </tbody>
+            <tfoot id="equipment-summary-foot">
+              <!-- Totales -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eficiencia Manual vs Automática -->
+    <div class="row mb-4">
+      <div class="col-lg-6 mb-3 mb-lg-0">
+        <div class="dashboard-card h-100">
+          <div class="card-header">
+            <i class="fas fa-user"></i> Eficiencia Manual
+          </div>
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
+            <div id="manual-efficiency-chart" style="height: 220px; width: 100%;"></div>
+            <div class="mt-3 text-center">
+              <div class="value" id="manual-efficiency-value" style="font-size: 2rem; font-weight: 700; color: var(--pepsico-blue);">0%</div>
+              <div class="text-muted">Sin intervención TSC</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="dashboard-card h-100">
+          <div class="card-header">
+            <i class="fas fa-robot"></i> Eficiencia Automática
+          </div>
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
+            <div id="automatic-efficiency-chart" style="height: 220px; width: 100%;"></div>
+            <div class="mt-3 text-center">
+              <div class="value" id="automatic-efficiency-value" style="font-size: 2rem; font-weight: 700; color: var(--pepsico-blue);">0%</div>
+              <div class="text-muted">Con intervención TSC</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficas de Eficiencia por Equipo -->
+    <div class="dashboard-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-tachometer-alt"></i> Eficiencia por Equipo
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-lg-4 col-md-4 text-center mb-4 mb-lg-0">
+            <h6 class="fw-bold mb-3">Pesadora (CCW)</h6>
+            <div class="gauge-container" id="ccw-efficiency-chart"></div>
+          </div>
+          <div class="col-lg-4 col-md-4 text-center mb-4 mb-lg-0">
+            <h6 class="fw-bold mb-3">Embazadora (ATLAS)</h6>
+            <div class="gauge-container" id="atlas-efficiency-chart"></div>
+          </div>
+          <div class="col-lg-4 col-md-4 text-center">
+            <h6 class="fw-bold mb-3">Chequiadora (TSC)</h6>
+            <div class="gauge-container" id="tsc-efficiency-chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bolsas Defectuosas y Análisis de Sobrepeso -->
+    <div class="row mb-4">
+      <div class="col-lg-6 mb-3 mb-lg-0">
+        <div class="dashboard-card h-100">
+          <div class="card-header">
+            <i class="fas fa-trash-alt"></i> Bolsas Defectuosas
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Tipo de Bolsa</th>
+                    <th class="text-end">Cantidad</th>
+                    <th class="text-end">% del Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><i class="fas fa-tint text-danger me-2"></i> Bolsas con Fuga</td>
+                    <td class="text-end" id="leak-bags-value">0</td>
+                    <td class="text-end" id="leak-bags-percent">0%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fas fa-compress-alt text-warning me-2"></i> Bolsas Aplastadas</td>
+                    <td class="text-end" id="flat-bags-value">0</td>
+                    <td class="text-end" id="flat-bags-percent">0%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fas fa-layer-group text-primary me-2"></i> Bolsas Dobles</td>
+                    <td class="text-end" id="double-bags-value">0</td>
+                    <td class="text-end" id="double-bags-percent">0%</td>
+                  </tr>
+                  <tr>
+                    <td><i class="fas fa-weight text-info me-2"></i> Bolsas Gruesas</td>
+                    <td class="text-end" id="thick-bags-value">0</td>
+                    <td class="text-end" id="thick-bags-percent">0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="dashboard-card h-100">
+          <div class="card-header">
+            <i class="fas fa-weight"></i> Análisis de Sobrepeso
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="cost-per-gram" class="form-label">Costo por gramo (en moneda local)</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" id="cost-per-gram" class="form-control" placeholder="Ej. 0.05" step="0.01" value="0.05">
+                <button class="btn btn-outline-secondary" type="button" id="update-cost">Actualizar</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <div class="kpi-metric p-3">
+                  <div class="label">Sobrepeso Total</div>
+                  <div class="value" id="overweight-grams-value" style="font-size: 1.8rem;">0 g</div>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="kpi-metric p-3">
+                  <div class="label">Costo Total</div>
+                  <div class="value" id="overweight-cost-value" style="font-size: 1.8rem;">$0</div>
+                </div>
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="kpi-metric p-3">
+                  <div class="label">Sobrepeso</div>
+                  <div class="value" id="overweight-kg-value" style="font-size: 1.8rem;">0 kg</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ranking de Plantas (por Sobrepeso) -->
+    <div class="dashboard-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-chart-bar"></i> Ranking de Plantas (por Sobrepeso)
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Planta</th>
+                <th class="text-center">Bolsas Buenas (TSC)</th>
+                <th class="text-center">Des Estandar (%)</th>
+                <th class="text-center">Sobrepeso (bolsas)</th>
+                <th class="text-center">Eficiencia (%)</th>
+                <th class="text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="plant-ranking-table">
+              <!-- Datos se cargarán dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 3 Fallas DME -->
+    <div class="dashboard-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-exclamation-triangle"></i> Top 3 Fallas DME
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Falla</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-center">Posición</th>
+              </tr>
+            </thead>
+            <tbody id="dme-failures-table">
+              <!-- Los datos se cargarán dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const loadingSpinner = document.getElementById('loading-spinner');
+      
+      function showLoading() {
+        loadingSpinner.style.display = 'flex';
+      }
+      
+      function hideLoading() {
+        loadingSpinner.style.display = 'none';
+      }
+
+      function loadPlants() {
+        showLoading();
+        fetch('/get-plants')
+          .then(response => response.json())
+          .then(plants => {
+            const plantSelect = document.getElementById('plant-select');
+            plantSelect.innerHTML = '<option value="">Todas las Plantas</option>';
+            plants.forEach(plant => {
+              let option = document.createElement('option');
+              option.value = plant;
+              option.textContent = plant;
+              plantSelect.appendChild(option);
+            });
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar plantas:', error);
+            hideLoading();
+          });
+      }
+
+      function loadLines(plant) {
+        const lineSelect = document.getElementById('line-select');
+        if (!plant) {
+          lineSelect.innerHTML = '<option value="">Todas las Líneas</option>';
+          return;
+        }
+        showLoading();
+        fetch('/plant-lines', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ plant: plant })
+        })
+        .then(response => response.json())
+        .then(lines => {
+          lineSelect.innerHTML = '<option value="">Todas las Líneas</option>';
+          lines.forEach(line => {
+            let option = document.createElement('option');
+            option.value = line;
+            option.textContent = line;
+            lineSelect.appendChild(option);
+          });
+          hideLoading();
+        })
+        .catch(error => {
+          console.error('Error al cargar líneas:', error);
+          hideLoading();
+        });
+      }
+
+      function loadEquipment(plant, line) {
+        showLoading();
+        fetch('/equipment-by-filter', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ plant: plant, line: line })
+        })
+        .then(response => response.json())
+        .then(equipment => {
+          const equipmentSelect = document.getElementById('equipment-select');
+          equipmentSelect.innerHTML = '<option value="">Todos los Equipos</option>';
+          equipment.forEach(eq => {
+            let option = document.createElement('option');
+            option.value = eq;
+            option.textContent = eq;
+            equipmentSelect.appendChild(option);
+          });
+          hideLoading();
+        })
+        .catch(error => {
+          console.error('Error al cargar equipos:', error);
+          hideLoading();
+        });
+      }
+
+      function loadAvailableDates() {
+        showLoading();
+        fetch('/available-dates')
+          .then(response => response.json())
+          .then(data => {
+            if (data.min_date && data.max_date) {
+              document.getElementById('start-date').min = data.min_date;
+              document.getElementById('start-date').max = data.max_date;
+              document.getElementById('end-date').min = data.min_date;
+              document.getElementById('end-date').max = data.max_date;
+              document.getElementById('available-dates-info').textContent = `Datos disponibles: ${data.min_date} a ${data.max_date}`;
+              document.getElementById('start-date').value = data.min_date;
+              document.getElementById('end-date').value = data.max_date;
+            }
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar fechas:', error);
+            hideLoading();
+          });
+      }
+
+      function loadEquipmentSummary() {
+        showLoading();
+        fetch('/equipment-summary')
+          .then(response => response.json())
+          .then(data => {
+            const tableBody = document.getElementById('equipment-summary-table');
+            const tableFoot = document.getElementById('equipment-summary-foot');
+            tableBody.innerHTML = '';
+            tableFoot.innerHTML = '';
+            if (!data || data.length === 0) {
+              tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No hay datos disponibles</td></tr>';
+              hideLoading();
+              return;
+            }
+            let totalInstalled = 0;
+            let totalLoaded = 0;
+            data.forEach(item => {
+              totalInstalled += item.installed;
+              totalLoaded += item.loaded;
+              const row = document.createElement('tr');
+              
+              // Status badge based on percentage
+              let statusBadge = '';
+              if (item.percentage >= 90) {
+                statusBadge = '<span class="status-badge status-badge-success">Cargados</span>';
+              } else if (item.percentage >= 50) {
+                statusBadge = '<span class="status-badge status-badge-warning">Parcial</span>';
+              } else {
+                statusBadge = '<span class="status-badge status-badge-danger">No cargados</span>';
+              }
+              
+              row.innerHTML = `
+                <td><strong>${item.plant}</strong></td>
+                <td class="text-center">${item.installed}</td>
+                <td class="text-center">${item.loaded}</td>
+                <td class="text-center">${item.percentage.toFixed(1)}%</td>
+                <td class="text-center">${statusBadge}</td>
+              `;
+              tableBody.appendChild(row);
+            });
+            const overallPerc = (totalInstalled > 0) ? (totalLoaded / totalInstalled * 100) : 0;
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = `
+              <th>Total</th>
+              <th class="text-center">${totalInstalled}</th>
+              <th class="text-center">${totalLoaded}</th>
+              <th class="text-center">${overallPerc.toFixed(1)}%</th>
+              <th></th>
+            `;
+            totalRow.classList.add('table-primary');
+            tableFoot.appendChild(totalRow);
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar resumen de equipos:', error);
+            hideLoading();
+          });
+      }
+
+      function loadPlantRanking() {
+        showLoading();
+        fetch('/plant-ranking')
+          .then(response => response.json())
+          .then(data => {
+            const rankingTable = document.getElementById('plant-ranking-table');
+            rankingTable.innerHTML = '';
+            if (!data || data.length === 0) {
+              rankingTable.innerHTML = '<tr><td colspan="6" class="text-center">No hay datos disponibles</td></tr>';
+              hideLoading();
+              return;
+            }
+            data.forEach((item, index) => {
+              const row = document.createElement('tr');
+              
+              // Determine status badge based on efficiency
+              let statusBadge = '';
+              if (item.overall_efficiency >= 85) {
+                statusBadge = '<span class="status-badge status-badge-success">Excelente</span>';
+              } else if (item.overall_efficiency >= 70) {
+                statusBadge = '<span class="status-badge status-badge-warning">Aceptable</span>';
+              } else {
+                statusBadge = '<span class="status-badge status-badge-danger">Bajo Rendimiento</span>';
+              }
+              
+              // Add ranking position icon
+              const rankIcon = index < 3 ? 
+                `<i class="fas fa-trophy ${index === 0 ? 'text-warning' : index === 1 ? 'text-secondary' : 'text-danger'}"></i> ` : 
+                `<span class="me-1">${index + 1}.</span>`;
+              
+              row.innerHTML = `
+                <td class="fw-bold">${rankIcon} ${item.plant}</td>
+                <td class="text-center">${item.total_good.toLocaleString()}</td>
+                <td class="text-center">${Number(item.avg_desestandar).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
+                <td class="text-center">${Number(item.overweight_total).toLocaleString('en-US', { maximumFractionDigits: 0 })} bolsas</td>
+                <td class="text-center">${item.overall_efficiency.toFixed(1)}%</td>
+                <td class="text-center">${statusBadge}</td>
+              `;
+              rankingTable.appendChild(row);
+            });
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar ranking de plantas:', error);
+            hideLoading();
+          });
+      }
+
+      function loadParetoChart(filters = {}) {
+        showLoading();
+        fetch('/pareto-defects', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(filters)
+        })
+          .then(response => response.json())
+          .then(data => {
+            let defects = [
+              { type: 'Bolsas con Fuga', count: data.leak_bags, icon: '💧' },
+              { type: 'Bolsas Aplastadas', count: data.flat_bags, icon: '📏' },
+              { type: 'Bolsas Dobles', count: data.double_bags, icon: '📦' },
+              { type: 'Bolsas Gruesas', count: data.thick_bags, icon: '⚖️' }
+            ];
+            defects.sort((a, b) => b.count - a.count);
+            
+            let types = defects.map(item => `${item.icon} ${item.type}`);
+            let counts = defects.map(item => item.count);
+            let total = data.total;
+            
+            // Calculate percentages for the defect types
+            const percentages = defects.map(item => ((item.count / total) * 100).toFixed(1));
+            document.getElementById('leak-bags-percent').textContent = ((data.leak_bags / total) * 100).toFixed(1) + '%';
+            document.getElementById('flat-bags-percent').textContent = ((data.flat_bags / total) * 100).toFixed(1) + '%';
+            document.getElementById('double-bags-percent').textContent = ((data.double_bags / total) * 100).toFixed(1) + '%';
+            document.getElementById('thick-bags-percent').textContent = ((data.thick_bags / total) * 100).toFixed(1) + '%';
+            
+            let cumulative = [];
+            let sum = 0;
+            defects.forEach(item => {
+              sum += item.count;
+              cumulative.push((sum / total) * 100);
+            });
+            
+            let trace1 = {
+              x: types,
+              y: counts,
+              type: 'bar',
+              name: 'Defectos',
+              text: percentages.map(p => p + '%'),
+              textposition: 'auto',
+              marker: {
+                color: 'rgba(3, 87, 160, 0.7)',
+                line: {
+                  color: 'rgba(3, 87, 160, 1.0)',
+                  width: 1
+                }
+              }
+            };
+            
+            let trace2 = {
+              x: types,
+              y: cumulative,
+              type: 'scatter',
+              mode: 'lines+markers',
+              name: 'Acumulado %',
+              yaxis: 'y2',
+              line: {
+                color: '#e74c3c',
+                width: 3
+              },
+              marker: {
+                color: '#e74c3c',
+                size: 8
+              }
+            };
+            
+            let layout = {
+              title: {
+                text: 'Análisis de Pareto: Distribución de Defectos',
+                font: {
+                  size: 18,
+                  family: 'Montserrat, sans-serif',
+                  color: '#333'
+                }
+              },
+              xaxis: { 
+                title: 'Tipo de Defecto',
+                tickangle: 0
+              },
+              yaxis: { 
+                title: 'Cantidad',
+                titlefont: { color: 'rgba(3, 87, 160, 1.0)' },
+                tickfont: { color: 'rgba(3, 87, 160, 1.0)' }
+              },
+              yaxis2: {
+                title: 'Porcentaje Acumulado',
+                titlefont: { color: '#e74c3c' },
+                tickfont: { color: '#e74c3c' },
+                overlaying: 'y',
+                side: 'right',
+                range: [0, 100],
+                ticksuffix: '%'
+              },
+              legend: {
+                orientation: 'h',
+                y: -0.2
+              },
+              margin: {
+                l: 60,
+                r: 60,
+                t: 80,
+                b: 80
+              },
+              showlegend: true,
+              barmode: 'group'
+            };
+            
+            Plotly.newPlot('pareto-chart', [trace1, trace2], layout);
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar Pareto:', error);
+            hideLoading();
+          });
+      }
+
+      // Función para renderizar medidores de eficiencia
+      function renderEfficiencyGauge(elementId, value) {
+        let color;
+        if (value >= 80) {
+          color = "#28a745";
+        } else if (value >= 60) {
+          color = "#ffc107";
+        } else {
+          color = "#dc3545";
+        }
+        
+        const data = [
+          {
+            domain: { x: [0, 1], y: [0, 1] },
+            value: value,
+            title: { text: "Eficiencia (%)", font: { size: 18, color: "#333", family: "Montserrat, sans-serif", weight: 'bold' } },
+            type: "indicator",
+            mode: "gauge+number",
+            number: { font: { size: 40, color: color, family: "Montserrat, sans-serif", weight: 'bold' }, suffix: "%" },
+            gauge: {
+              axis: { range: [null, 100], tickwidth: 2, tickcolor: "#666", tickfont: { size: 14 }, ticklen: 10 },
+              bar: { color: color, thickness: 0.6 },
+              bgcolor: "#f5f5f5",
+              borderwidth: 2,
+              bordercolor: "#ccc",
+              steps: [
+                { range: [0, 60], color: "rgba(220, 53, 69, 0.4)" },
+                { range: [60, 80], color: "rgba(255, 193, 7, 0.4)" },
+                { range: [80, 100], color: "rgba(40, 167, 69, 0.4)" }
+              ],
+              threshold: { line: { color: "#333", width: 4 }, thickness: 0.85, value: value }
+            }
+          }
+        ];
+        
+        const layout = { autosize: true, width: null, height: 220, margin: { t: 40, r: 40, l: 40, b: 20 }, font: { family: "Montserrat, sans-serif" }, paper_bgcolor: "white" };
+        const config = { responsive: true, displayModeBar: false };
+        
+        Plotly.newPlot(elementId, data, layout, config);
+      }
+
+      // Función para renderizar medidores de equipos
+      function renderGauge(containerId, value, label) {
+        let color;
+        if (value >= 80) {
+          color = "#28a745";
+        } else if (value >= 60) {
+          color = "#ffc107";
+        } else {
+          color = "#dc3545";
+        }
+        
+        const gaugeData = [{
+          type: 'indicator',
+          mode: 'gauge+number',
+          value: value,
+          title: { text: label, font: { size: 20, color: "#333", family: "Montserrat, sans-serif", weight: 'bold' } },
+          number: { suffix: "%", font: { size: 36, color: color, family: "Montserrat, sans-serif", weight: 'bold' } },
+          gauge: {
+            axis: { range: [0, 100], tickwidth: 2, tickcolor: "#666", tickfont: { size: 12 }, ticklen: 8 },
+            bar: { color: color, thickness: 0.6 },
+            bgcolor: "#f5f5f5",
+            borderwidth: 2,
+            bordercolor: "#ccc",
+            steps: [
+              { range: [0, 60], color: "rgba(220, 53, 69, 0.4)" },
+              { range: [60, 80], color: "rgba(255, 193, 7, 0.4)" },
+              { range: [80, 100], color: "rgba(40, 167, 69, 0.4)" }
+            ],
+            threshold: { line: { color: "#333", width: 4 }, thickness: 0.85, value: value }
+          }
+        }];
+        
+        const layout = { autosize: true, width: null, height: 220, margin: { t: 40, r: 30, l: 30, b: 20 }, paper_bgcolor: "white", font: { family: "Montserrat, sans-serif" } };
+        const config = { responsive: true, displayModeBar: false };
+        
+        Plotly.newPlot(containerId, gaugeData, layout, config);
+      }
+
+      function loadDashboardData(filters = {}) {
+        showLoading();
+        fetch('/dashboard-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filters)
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (!data.metrics) {
+              hideLoading();
+              return;
+            }
+            
+            const m = data.metrics;
+            
+            document.getElementById('overall-efficiency-value').textContent = m.overall_efficiency.toFixed(1) + '%';
+            document.getElementById('waste-rate-value').textContent = m.waste_rate.toFixed(1) + '%';
+            document.getElementById('good-bags-value').textContent = m.good_bags.toLocaleString();
+            document.getElementById('theoretical-bags-value').textContent = m.theoretical_bags.toLocaleString();
+            
+            document.getElementById('manual-efficiency-value').textContent = m.manual_efficiency.toFixed(1) + '%';
+            document.getElementById('automatic-efficiency-value').textContent = m.automatic_efficiency.toFixed(1) + '%';
+            
+            renderEfficiencyGauge('manual-efficiency-chart', m.manual_efficiency);
+            renderEfficiencyGauge('automatic-efficiency-chart', m.automatic_efficiency);
+            
+            renderGauge('ccw-efficiency-chart', m.ccw_efficiency, 'CCW');
+            renderGauge('atlas-efficiency-chart', m.atlas_efficiency, 'ATLAS');
+            renderGauge('tsc-efficiency-chart', m.tsc_efficiency, 'TSC');
+            
+            document.getElementById('leak-bags-value').textContent = m.leak_bags.toLocaleString();
+            document.getElementById('flat-bags-value').textContent = m.flat_bags.toLocaleString();
+            document.getElementById('double-bags-value').textContent = m.double_bags.toLocaleString();
+            document.getElementById('thick-bags-value').textContent = m.thick_bags.toLocaleString();
+            
+            document.getElementById('overweight-grams-value').textContent = m.overweight_grams.toLocaleString() + ' g';
+            updateOverweightCalculations(m.overweight_grams);
+            
+            loadPlantRanking();
+            loadParetoChart(filters);
+            
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar datos del dashboard:', error);
+            hideLoading();
+          });
+      }
+
+      function updateOverweightCalculations(overweight_grams) {
+        const costInput = document.getElementById('cost-per-gram');
+        const cost = parseFloat(costInput.value) || 0;
+        const costTotal = overweight_grams * cost;
+        const overweightKg = overweight_grams / 1000;
+        document.getElementById('overweight-cost-value').textContent = '$' + costTotal.toFixed(2);
+        document.getElementById('overweight-kg-value').textContent = overweightKg.toFixed(2) + ' kg';
+      }
+
+      function loadDmeFailures(filters = {}) {
+        showLoading();
+        fetch('/dme-failures', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filters)
+        })
+          .then(response => response.json())
+          .then(data => {
+            const tableBody = document.getElementById('dme-failures-table');
+            tableBody.innerHTML = '';
+            if (!data || data.length === 0) {
+              tableBody.innerHTML = '<tr><td colspan="3" class="text-center">No hay datos disponibles</td></tr>';
+              hideLoading();
+              return;
+            }
+            data.forEach((item, index) => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${item.StopReason}</td>
+                <td class="text-center">${Number(item.Count).toLocaleString('en-US')}</td>
+                <td class="text-center">${index + 1}</td>
+              `;
+              tableBody.appendChild(row);
+            });
+            hideLoading();
+          })
+          .catch(error => {
+            console.error('Error al cargar fallas DME:', error);
+            hideLoading();
+          });
+      }
+
+      document.getElementById('plant-select').addEventListener('change', function() {
+        loadLines(this.value);
+        loadEquipment(this.value, document.getElementById('line-select').value);
+      });
+      
+      document.getElementById('line-select').addEventListener('change', function() {
+        const plant = document.getElementById('plant-select').value;
+        loadEquipment(plant, this.value);
+      });
+      
+      document.getElementById('dashboard-filters').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const filters = {
+          plant: document.getElementById('plant-select').value,
+          line: document.getElementById('line-select').value,
+          equipment: document.getElementById('equipment-select').value,
+          start_date: document.getElementById('start-date').value,
+          end_date: document.getElementById('end-date').value
+        };
+        // Carga métricas generales
+        loadDashboardData(filters);
+        // Carga Top 3 Fallas DME
+        loadDmeFailures(filters);
+      });
+
+      // Carga inicial de datos
+      loadPlants();
+      loadAvailableDates();
+      loadEquipmentSummary();
+      loadDashboardData();
+      loadDmeFailures();
+    });
+  </script>
+</body>
+</html>
